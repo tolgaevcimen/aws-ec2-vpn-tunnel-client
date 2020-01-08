@@ -1,3 +1,5 @@
 ﻿## gitignore
 /.vs/
 /AwsVpnActivator/obj/
+/AwsVpnActivator/bin/
+/AwsVpnActivator/Properties/PublishProfiles/

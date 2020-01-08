@@ -4,6 +4,7 @@ using Amazon.Runtime;
 using Amazon.Runtime.CredentialManagement;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -24,11 +25,15 @@ namespace AwsVpnActivator
 
                 var address = await ec2Client.AllocateAddressAsync();
 
+                Console.WriteLine($"Ip address allocated");
+
                 var association = await ec2Client.AssociateAddressAsync(new AssociateAddressRequest
                 {
                     AllocationId = address.AllocationId,
                     InstanceId = instance.InstanceId
                 });
+
+                Console.WriteLine($"Ip address associated");
 
                 await ec2Client.StartInstancesAsync(new StartInstancesRequest
                 {
@@ -50,12 +55,44 @@ namespace AwsVpnActivator
                         started = instanceStatuses.InstanceStatuses.FirstOrDefault().InstanceState.Code == 16;
                 }
 
-                // ssh
-                // start chrome
+                Console.WriteLine($"Started, Connecting via SSH");
 
-                Console.WriteLine("press a key to shutdown");
+                // ssh
+                Process sshProcess = new Process();
+                sshProcess.StartInfo.FileName = "ssh";
+                sshProcess.StartInfo.Arguments = "-D 8080 -i \"C:\\Users\\htolg\\OneDrive\\Belgeler\\htolgaevcimen-vpn-ec2.pem\" ubuntu@" + address.PublicIp;
+                sshProcess.StartInfo.RedirectStandardOutput = true;
+                sshProcess.Start();
+
+                var connected = false;
+                while (!connected)
+                {
+                    await Task.Delay(50);
+                    var output = sshProcess.StandardOutput.ReadLine();
+                    if (output.Contains("Last login"))
+                    {
+                        connected = true;
+                    }
+                }
+                
+                Console.WriteLine($"Connected, Starting Chrome");
+                
+                // start chrome
+                var chromeProcess = new Process();
+                chromeProcess.StartInfo.FileName = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+                chromeProcess.StartInfo.Arguments = "--user-data-dir=\"%USERPROFILE%\\proxy-profile\" --proxy-server=\"socks5://localhost:8080\"";
+                chromeProcess.Start();
+
+                Console.WriteLine($"Chrome Started");
+
+                Console.WriteLine("\n\npress a key to shutdown");
 
                 Console.ReadKey();
+
+                // kill ssh
+                sshProcess.Close();
+                // kill chrome
+                chromeProcess.Kill();
 
                 await ec2Client.StopInstancesAsync(new StopInstancesRequest
                 {
@@ -88,13 +125,8 @@ namespace AwsVpnActivator
                         started = instanceStatuses.InstanceStatuses.FirstOrDefault().InstanceState.Code == 80;
                     else stopped = true;
                 }
-
-                // kill ssh
-                // kill chrome
-
-
+                               
                 Console.WriteLine("shutdown successful");
-
                 Console.ReadKey();
             }
         }
