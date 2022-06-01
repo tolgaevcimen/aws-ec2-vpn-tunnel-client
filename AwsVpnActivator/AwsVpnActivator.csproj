@@ -9,7 +9,7 @@
     <PackageReference Include="AWSSDK.Core" Version="3.3.104.12" />
     <PackageReference Include="AWSSDK.EC2" Version="3.3.147.3" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.3.100.1" />
-    <PackageReference Include="SSH.NET" Version="2016.1.0" />
+    <PackageReference Include="SSH.NET" Version="2020.0.2" />
   </ItemGroup>
 
 </Project>
